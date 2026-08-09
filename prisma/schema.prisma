@@ -1,0 +1,68 @@
+// ComparaAI - Prisma Şema Taslağı (V0.5)
+// Esnek şema yaklaşımı: her kategori için ayrı tablo yerine
+// ortak Product tablosu + kategoriye özel alanlar için JSONB (specs)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique // "Telefon", "Laptop", "PC Parçaları", "Ekipman"
+  slug      String    @unique // "telefon", "laptop" - URL'lerde kullanılacak
+  parent    Category? @relation("SubCategories", fields: [parentId], references: [id])
+  parentId  String?
+  children  Category[] @relation("SubCategories")
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id          String     @id @default(cuid())
+  name        String
+  brand       String
+  category    Category   @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  price       Decimal    // güncel fiyat (minimum/tek fiyat)
+  priceMax    Decimal?   // opsiyonel: gözlemlenen en yüksek fiyat (aralık göstermek için)
+  imageUrl    String?
+  description String?    @db.Text
+
+  // Kategoriye özel özellikler burada tutulur.
+  // Örn. laptop: {"ram": "16GB", "cpu": "i7-13700H", "gpu": "RTX 4060", "linuxDestegi": true}
+  // Örn. telefon: {"batarya": "5000mAh", "kamera": "50MP", "depolama": "256GB"}
+  specs       Json
+
+  isActive    Boolean    @default(true) // admin panelden gizlenebilsin diye
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  priceHistory PriceHistory[]
+
+  @@index([categoryId])
+  @@index([brand])
+}
+
+// V2'de aktif kullanılacak ama şemayı şimdiden kuruyoruz
+model PriceHistory {
+  id        String   @id @default(cuid())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  price     Decimal
+  recordedAt DateTime @default(now())
+
+  @@index([productId, recordedAt])
+}
+
+// Admin panel için basit kullanıcı modeli (sadece 2 kurucu)
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  twoFactorSecret String? // 2FA için
+  createdAt    DateTime @default(now())
+}
