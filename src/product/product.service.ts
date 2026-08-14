@@ -9,57 +9,108 @@ export class ProductService {
   constructor(private prisma: PrismaService) {}
 
   create(createProductDto: CreateProductDto) {
-    return this.prisma.product.create({
-      data: {
-        ...createProductDto,
-        specs: createProductDto.specs as Prisma.InputJsonValue,
-      },
-    });
-  }
+  return this.prisma.product.create({
+    data: {
+      name: createProductDto.name,
+      brand: createProductDto.brand,
+      categoryId: createProductDto.categoryId,
 
-  async findAll(filters: {
-    categoryId?: string;
-    brand?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    minRam?: string;
-    minStorage?: string;
-    minBattery?: string;
-  }) {
-    const { categoryId, brand, minPrice, maxPrice, minRam, minStorage, minBattery } = filters;
+      // Fiyat artık kullanılmıyor.
+      // Eski database alanı için 0 tutuluyor.
+      price: createProductDto.price ?? 0,
+      priceMax: createProductDto.priceMax ?? 0,
 
-    const products = await this.prisma.product.findMany({
-      where: {
-        isActive: true,
-        ...(categoryId && { categoryId }),
-        ...(brand && { brand }),
-        ...(minPrice || maxPrice
-          ? {
-              price: {
-                ...(minPrice && { gte: Number(minPrice) }),
-                ...(maxPrice && { lte: Number(maxPrice) }),
-              },
-            }
-          : {}),
-      },
-      include: { category: true },
-    });
+      imageUrl: createProductDto.imageUrl,
+      description: createProductDto.description,
 
-    return products.filter((p) => {
-      const specs = (p.specs as Record<string, any>) || {};
+      segment: createProductDto.segment,
 
-      if (minRam && (!specs.ramGb || specs.ramGb < Number(minRam))) {
-        return false;
-      }
-      if (minStorage && (!specs.storageGb || specs.storageGb < Number(minStorage))) {
-        return false;
-      }
-      if (minBattery && (!specs.batteryMah || specs.batteryMah < Number(minBattery))) {
-        return false;
-      }
-      return true;
-    });
-  }
+      specs: createProductDto.specs as Prisma.InputJsonValue,
+    },
+  });
+}
+
+async findAll(filters: {
+  categoryId?: string;
+  brand?: string;
+  segment?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minRam?: string;
+  minStorage?: string;
+  minBattery?: string;
+}) {
+  const {
+    categoryId,
+    brand,
+    segment,
+    minPrice,
+    maxPrice,
+    minRam,
+    minStorage,
+    minBattery,
+  } = filters;
+
+  const products = await this.prisma.product.findMany({
+    where: {
+      isActive: true,
+
+      ...(categoryId && { categoryId }),
+
+      ...(brand && { brand }),
+
+      ...(segment && { segment }),
+
+      ...(minPrice || maxPrice
+        ? {
+            price: {
+              ...(minPrice && {
+                gte: Number(minPrice),
+              }),
+              ...(maxPrice && {
+                lte: Number(maxPrice),
+              }),
+            },
+          }
+        : {}),
+    },
+
+    include: {
+      category: true,
+    },
+  });
+
+  return products.filter((p) => {
+    const specs =
+      (p.specs as Record<string, any>) || {};
+
+    if (
+      minRam &&
+      (!specs.ramGb ||
+        specs.ramGb < Number(minRam))
+    ) {
+      return false;
+    }
+
+    if (
+      minStorage &&
+      (!specs.storageGb ||
+        specs.storageGb < Number(minStorage))
+    ) {
+      return false;
+    }
+
+    if (
+      minBattery &&
+      (!specs.batteryMah ||
+        specs.batteryMah < Number(minBattery))
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+}
 
   findOne(id: string) {
     return this.prisma.product.findUnique({

@@ -27,17 +27,23 @@ model Product {
   brand       String
   category    Category   @relation(fields: [categoryId], references: [id])
   categoryId  String
-  price       Decimal    // güncel fiyat (minimum/tek fiyat)
-  priceMax    Decimal?   // opsiyonel: gözlemlenen en yüksek fiyat (aralık göstermek için)
+
+  // Eski fiyat alanları şimdilik veritabanında tutuluyor.
+  // Kullanıcı arayüzünde gösterilmeyecek ve segment hesabında kullanılmayacak.
+  price       Decimal    @default(0)
+  priceMax    Decimal?   @default(0)
+
   imageUrl    String?
   description String?    @db.Text
 
-  // Kategoriye özel özellikler burada tutulur.
-  // Örn. laptop: {"ram": "16GB", "cpu": "i7-13700H", "gpu": "RTX 4060", "linuxDestegi": true}
-  // Örn. telefon: {"batarya": "5000mAh", "kamera": "50MP", "depolama": "256GB"}
+  // Yeni gerçek ürün segmenti
+  // ekonomik | orta | ust
+  segment     String     @default("orta")
+
+  // Kategoriye özel özellikler
   specs       Json
 
-  isActive    Boolean    @default(true) // admin panelden gizlenebilsin diye
+  isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -45,6 +51,7 @@ model Product {
 
   @@index([categoryId])
   @@index([brand])
+  @@index([segment])
 }
 
 // V2'de aktif kullanılacak ama şemayı şimdiden kuruyoruz
@@ -65,4 +72,21 @@ model AdminUser {
   passwordHash String
   twoFactorSecret String? // 2FA için
   createdAt    DateTime @default(now())
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  summary     String?   @db.Text
+  content     String    @db.Text
+  imageUrl    String?
+  author      String?
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isPublished])
+  @@index([publishedAt])
 }

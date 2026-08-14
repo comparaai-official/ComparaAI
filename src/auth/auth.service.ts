@@ -11,19 +11,30 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string) {
-    const user = await this.prisma.adminUser.findUnique({ where: { email } });
+    const user = await this.prisma.adminUser.findUnique({
+      where: { email },
+    });
 
     if (!user) {
       throw new UnauthorizedException('E-posta veya şifre hatalı');
     }
 
-    const passwordValid = await bcrypt.compare(password, user.passwordHash);
+    const passwordValid = await bcrypt.compare(
+      password,
+      user.passwordHash,
+    );
+
     if (!passwordValid) {
       throw new UnauthorizedException('E-posta veya şifre hatalı');
     }
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+    });
 
-    return { accessToken: token };
+    return {
+      accessToken: token,
+    };
   }
 }

@@ -1,3 +1,4 @@
+import { ArticleModule } from './article/article.module';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -7,7 +8,7 @@ import { ProductModule } from './product/product.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, CategoryModule, ProductModule, AuthModule],
+  imports: [PrismaModule, CategoryModule, ProductModule, AuthModule, ArticleModule],
   controllers: [AppController],
   providers: [AppService],
 })
