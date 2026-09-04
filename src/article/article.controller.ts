@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+
 import { ArticleService } from './article.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -17,22 +18,19 @@ export class ArticleController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() data: {
-    title: string;
-    slug: string;
-    summary?: string;
-    content: string;
-    imageUrl?: string;
-    author?: string;
-    isPublished?: boolean;
-    publishedAt?: string;
-  }) {
-    return this.articleService.create({
-      ...data,
-      publishedAt: data.publishedAt
-        ? new Date(data.publishedAt)
-        : undefined,
-    });
+  create(
+    @Body()
+    data: {
+      title: string;
+      slug: string;
+      summary?: string;
+      content: string;
+      imageUrl?: string;
+      author?: string;
+      status?: string;
+    },
+  ) {
+    return this.articleService.create(data);
   }
 
   @Get()
@@ -67,16 +65,10 @@ export class ArticleController {
       content?: string;
       imageUrl?: string;
       author?: string;
-      isPublished?: boolean;
-      publishedAt?: string;
+      status?: string;
     },
   ) {
-    return this.articleService.update(id, {
-      ...data,
-      publishedAt: data.publishedAt
-        ? new Date(data.publishedAt)
-        : undefined,
-    });
+    return this.articleService.update(id, data);
   }
 
   @UseGuards(JwtAuthGuard)

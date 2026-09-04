@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -12,11 +13,22 @@ export class ArticleService {
     content: string;
     imageUrl?: string;
     author?: string;
+    status?: string;
     isPublished?: boolean;
     publishedAt?: Date;
   }) {
+    const status = data.status ?? 'draft';
+
     return this.prisma.article.create({
-      data,
+      data: {
+        ...data,
+        status,
+        isPublished: status === 'published',
+        publishedAt:
+          status === 'published'
+            ? data.publishedAt ?? new Date()
+            : null,
+      },
     });
   }
 
@@ -31,7 +43,7 @@ export class ArticleService {
   findPublished() {
     return this.prisma.article.findMany({
       where: {
-        isPublished: true,
+        status: 'published',
       },
       orderBy: {
         publishedAt: 'desc',
@@ -51,19 +63,52 @@ export class ArticleService {
     });
   }
 
-  update(id: string, data: Partial<{
-    title: string;
-    slug: string;
-    summary: string;
-    content: string;
-    imageUrl: string;
-    author: string;
-    isPublished: boolean;
-    publishedAt: Date;
-  }>) {
+  update(
+    id: string,
+    data: Partial<{
+      title: string;
+      slug: string;
+      summary: string;
+      content: string;
+      imageUrl: string;
+      author: string;
+      status: string;
+      isPublished: boolean;
+      publishedAt: Date;
+    }>,
+  ) {
+    const updateData: {
+      title?: string;
+      slug?: string;
+      summary?: string;
+      content?: string;
+      imageUrl?: string;
+      author?: string;
+      status?: string;
+      isPublished?: boolean;
+      publishedAt?: Date | null;
+    } = {
+      ...data,
+    };
+
+    if (data.status === 'published') {
+      updateData.isPublished = true;
+      updateData.publishedAt = data.publishedAt ?? new Date();
+    }
+
+    if (data.status === 'draft') {
+      updateData.isPublished = false;
+      updateData.publishedAt = null;
+    }
+
+    if (data.status === 'pending') {
+      updateData.isPublished = false;
+      updateData.publishedAt = null;
+    }
+
     return this.prisma.article.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 
